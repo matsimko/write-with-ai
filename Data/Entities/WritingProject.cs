@@ -14,6 +14,11 @@ public class WritingProject
 	public required List<string> Rules { get; set; }
 
 	/// <summary>
+	/// Main genre is a part of every prompt
+	/// </summary>
+	public string? MainGenre { get; set; }
+
+	/// <summary>
 	/// Description is a part of the initial prompt used for generating the outline
 	/// </summary>
 	public string? Description { get; set; }
