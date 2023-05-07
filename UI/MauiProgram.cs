@@ -1,5 +1,7 @@
-﻿using Data.Services;
+﻿using CommunityToolkit.Maui;
+using Data.Services;
 using Microsoft.Extensions.Logging;
+using UI.Services;
 
 namespace UI;
 
@@ -10,7 +12,8 @@ public static class MauiProgram
 		var builder = MauiApp.CreateBuilder();
 		builder
 			.UseMauiApp<App>()
-			.ConfigureFonts(fonts =>
+            .UseMauiCommunityToolkit()
+            .ConfigureFonts(fonts =>
 			{
 				fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
 			});
@@ -21,9 +24,11 @@ public static class MauiProgram
 		builder.Services.AddSingleton(serviceProvider => serviceProvider.GetRequiredService<IDataService>().UserSettings);
 		builder.Services.AddSingleton<AiService>();
 		builder.Services.AddSingleton<WritingService>();
+        builder.Services.AddSingleton<ProjectManager>();
+		builder.Services.AddSingleton<PlatformUtils>();
 
 #if DEBUG
-		builder.Services.AddBlazorWebViewDeveloperTools();
+        builder.Services.AddBlazorWebViewDeveloperTools();
 		builder.Logging.AddDebug();
 #endif
 

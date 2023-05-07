@@ -1,0 +1,47 @@
+﻿
+<div class="modal fade" id="@Id" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            @if (Title != null)
+            {
+                <div class="modal-header">
+                    <h5 class="modal-title">@Title</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+            }
+            @if (ChildContent != null)
+            {
+                <div class="modal-body">
+                    @ChildContent
+                </div>
+            }
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button form="@FormId" @onclick="OnConfirm" data-bs-dismiss="modal" class="btn btn-primary">
+                    @(ConfirmText ?? "Confirm")
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    [Parameter]
+    public required string Id { get; set; }
+
+    [Parameter]
+    public string? Title { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public string? ConfirmText { get; set; }
+
+    [Parameter]
+    public EventCallback OnConfirm { get; set; }
+
+    [Parameter]
+    public string? FormId { get; set; }
+}

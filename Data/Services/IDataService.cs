@@ -8,6 +8,5 @@ public interface IDataService
 	void DeleteProject(WritingProject project);
 	List<WritingProject> LoadProjects();
 	void SaveProject(WritingProject project);
-	void SaveProjects(List<WritingProject> projects);
 	void SaveUserSettings();
 }

@@ -1,0 +1,59 @@
+﻿@inject ProjectManager _projectManager
+@inject NavigationManager _navigationManager
+
+<ConfirmDialog ConfirmText="Create"
+               Title="New project"
+               FormId="create-project-form"
+               @attributes="DialogAttributes">
+    <EditForm id="create-project-form" Model=_projectData OnValidSubmit="CreateProject">
+        <ValidationSummary/>
+        <div>
+            <label for="project-name" class="form-label">Name</label>
+            <InputText @bind-Value=_projectData.Name class="form-control" id="project-name" />
+        </div>
+        <div class="mt-3">
+            <label for="project-type" class="form-label">Type</label>
+            <InputSelect @bind-Value=_projectData.Type class="form-select" id="project-type">
+                @foreach (var type in ProjectTypes.All)
+                {
+                    <option>@type</option>
+                }
+            </InputSelect>
+        </div>
+        
+    </EditForm>
+</ConfirmDialog>
+
+@code {
+    class ProjectData
+    {
+        [MinLength(1)]
+        public string Name { get; set; } = "";
+        public string Type { get; set; } = ProjectTypes.Fiction;
+    }
+
+    ProjectData _projectData = new();
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? DialogAttributes { get; set; }
+
+    public void CreateProject()
+    {
+        WritingProject? project = null;
+        if (_projectData.Type == ProjectTypes.Fiction)
+        {
+            project = new FictionProject { Name = _projectData.Name };
+        }
+        else if (_projectData.Type == ProjectTypes.Nonfiction)
+        {
+            project = new NonfictionProject { Name = _projectData.Name };
+        }
+
+        if(project != null)
+        {
+            _projectManager.Projects.Add(project);
+            _projectManager.SelectedProject = project;
+            _navigationManager.NavigateTo("/current-project");
+        }
+    }
+}

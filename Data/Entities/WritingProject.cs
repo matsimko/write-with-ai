@@ -4,14 +4,19 @@ namespace Data.Entities;
 
 [JsonDerivedType(typeof(FictionProject), "FictionProject")]
 [JsonDerivedType(typeof(NonfictionProject), "NonfictionProject")]
-public class WritingProject
+public abstract class WritingProject
 {
 	public Guid Id { get; set; } = Guid.NewGuid();
 
 	/// <summary>
+	/// Name of the project
+	/// </summary>
+	public required string Name { get; set; }
+
+	/// <summary>
 	/// Rules for writing are a part of every prompt
 	/// </summary>
-	public required List<string> Rules { get; set; }
+	public List<string> Rules { get; } = new();
 
 	/// <summary>
 	/// Main genre is a part of every prompt
@@ -23,6 +28,9 @@ public class WritingProject
 	/// </summary>
 	public string? Description { get; set; }
 
+	/// <summary>
+	/// Title of the writing
+	/// </summary>
 	public string? Title { get; set; }
 
 	/// <summary>

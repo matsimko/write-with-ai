@@ -8,3 +8,17 @@ $enable-rounded: false;
 .sidebar {
     background-color: color.scale($primary, $lightness: -50%);
 }
+
+.list-accordion {
+    .accordion-body  {
+        padding: 0;
+    }
+
+    .accordion-button {
+        font-weight: bold;
+    }
+
+    .list-group {
+        @extend .list-group-flush;
+    }
+}

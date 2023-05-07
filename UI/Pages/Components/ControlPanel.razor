@@ -1,0 +1,8 @@
+﻿<div class="hstack gap-3 sticky-top py-2 bg-body">
+    @ChildContent
+</div>
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

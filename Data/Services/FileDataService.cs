@@ -65,11 +65,6 @@ public class FileDataService : IDataService
 		SaveAsJsonFile(project, GetPathForProject(project));
 	}
 
-	public void SaveProjects(List<WritingProject> projects)
-	{
-		projects.ForEach(SaveProject);
-	}
-
 	public void DeleteProject(WritingProject project)
 	{
 		var reg = new Regex($"{project.Id}.json$");

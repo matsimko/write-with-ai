@@ -1,7 +1,115 @@
 ﻿@page "/projects"
+@inject ProjectManager _projectManager
+@inject NavigationManager _navigationManager
+@inject PlatformUtils _platformUtils
 
-<h3>Projects</h3>
+
+<ControlPanel>
+    <div>
+        <DialogTriggerButton Target="new-project" class="btn btn-primary"
+                >
+            <span class="bi bi-plus-lg"></span> New project
+        </DialogTriggerButton>
+    </div>
+    @if(_platformUtils.CanChangeDirectory())
+    {
+        <div>
+            <button type="button" class="btn btn-secondary"
+                    @onclick="PickWorkspace">
+                <span class="bi bi-folder2"></span> Change workspace
+            </button>
+        </div>
+    }
+    <DialogTriggerButton Target="delete-projects" class="btn btn-secondary" @onclick=ResetProjectsToDelete>
+        <span class="bi bi-trash"></span> Delete projects
+    </DialogTriggerButton>
+
+</ControlPanel>
+
+<Accordion Items="GetProjectsByType()"
+            Context="projects"
+            class="accordion list-accordion">
+    <ItemTemplate>
+        <div class="list-group">
+            @foreach (var project in projects)
+            {
+            <button type="button" class="list-group-item list-group-item-action
+                    @(project == _projectManager.SelectedProject ? "active" : "")"
+                    @onclick="() => SelectProject(project)">
+                @project.Name
+            </button>
+            }
+        </div>
+    </ItemTemplate>
+</Accordion>
+
+
+<CreateProjectDialog id="new-project" />
+<ConfirmDialog id="delete-projects" ConfirmText="Delete"
+               Title="Select projects to delete"
+               OnConfirm="DeleteProjects">
+    <select class="form-select" multiple @bind=_projectIdsToDelete size="10">
+        @foreach (var project in _projectManager.Projects)
+        {
+            <option value="@project.Id">@project.Name</option>
+        }
+    </select>
+</ConfirmDialog>
+
 
 @code {
+    private Guid[] _projectIdsToDelete = new Guid[] { };
 
+    private List<(string, List<WritingProject>)> GetProjectsByType()
+    {
+        var fictionProjects = new List<WritingProject>();
+        var nonfictionProjects = new List<WritingProject>();
+
+        @foreach (var project in _projectManager.Projects.OrderBy(p => p.Name))
+        {
+            if (project is FictionProject f)
+            {
+                fictionProjects.Add(f);
+            }
+            else if (project is NonfictionProject nf)
+            {
+                nonfictionProjects.Add(nf);
+            }
+        }
+
+        return new()
+        {
+            ("Fiction", fictionProjects),
+            ("Nonfiction", nonfictionProjects),
+        };
+    }
+
+    private async Task PickWorkspace()
+    {
+        var newWorkspace = await _platformUtils.PickFolder();
+        if(newWorkspace != null)
+        {
+            _projectManager.SetWorkspace(newWorkspace);
+        }
+    }
+
+    private void SelectProject(WritingProject project)
+    {
+        _projectManager.SelectedProject = project;
+        _navigationManager.NavigateTo("/current-project");
+    }
+
+    private void DeleteProjects()
+    {
+        @foreach(var id in _projectIdsToDelete)
+        {
+            var project = _projectManager.Projects.Where(p => p.Id == id).First();
+            _projectManager.Projects.Remove(project);
+        }
+    }
+
+    private void ResetProjectsToDelete()
+    {
+        _projectIdsToDelete = new Guid[] { };
+    }
 }

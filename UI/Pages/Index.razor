@@ -9,5 +9,8 @@
 
 	protected override void OnInitialized()
 	{
+		_dataService.SaveProject(new FictionProject { Name = "His story" });
+		_dataService.SaveProject(new NonfictionProject { Name = "The book of truth" });
+		_dataService.SaveProject(new FictionProject { Name = "Bold story" });
 	}
 }

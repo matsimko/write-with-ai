@@ -1,0 +1,30 @@
+﻿@typeparam TItem
+
+<div class="acordion" @attributes="@AccordionAttributes" >
+    @foreach(var (title, item) in Items)
+    {
+        <div class="accordion-item">
+        <h2 class="accordion-header" id="@title">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#@(title)-collapse">
+                @title
+            </button>
+        </h2>
+        <div id="@(title)-collapse" class="accordion-collapse collapse show">
+            <div class="accordion-body">
+                @ItemTemplate(item)
+            </div>
+        </div>
+    </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public required List<(string, TItem)> Items { get; set; }
+
+    [Parameter]
+    public required RenderFragment<TItem> ItemTemplate { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AccordionAttributes { get; set; }
+}
