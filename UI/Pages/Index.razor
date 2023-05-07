@@ -1,3 +1,13 @@
 ﻿@page "/"
+@inject IDataService _dataService
+@inject WritingService _writingService
 
 <h1>Hello, world!</h1>
+<p>@Directory.GetCurrentDirectory()</p>
+
+@code {
+
+	protected override void OnInitialized()
+	{
+	}
+}

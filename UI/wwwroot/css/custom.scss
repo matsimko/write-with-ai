@@ -1,0 +1,10 @@
+@use 'sass:color';
+
+$primary: #6e4616;
+$enable-rounded: false;
+
+@import "../bootstrap/scss/bootstrap";
+
+.sidebar {
+    background-color: color.scale($primary, $lightness: -50%);
+}
