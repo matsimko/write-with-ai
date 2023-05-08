@@ -1,11 +1,55 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+<MudThemeProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
 
-    <main class="container-fluid">
-        @Body
-    </main>
-</div>
+<MudLayout>
+
+    <MudDrawer @bind-Open="drawerOpen" Width="200px" Elevation="3">
+        <MudNavMenu>
+            <MudNavLink Href="projects" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Folder"> Projects</MudNavLink>
+            <MudNavLink Href="current-project" Icon="@Icons.Material.Filled.MenuBook">Current Project</MudNavLink>
+            <MudNavLink Href="settings" Icon="@Icons.Material.Filled.Settings">Settings</MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
+
+    <MudMainContent Class="pt-0">
+        <MudPaper Square="true" Elevation="3" Class="pa-2 sticky z-100" Style="top: 0">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="4"
+                      Class="flex-wrap">
+                <MudHidden Breakpoint="Breakpoint.MdAndUp">
+                    <MudIconButton @onclick=ToggleDrawer Icon="@Icons.Material.Outlined.Menu"
+                                   Size="Size.Large" Color="Color.Inherit" Class="pa-0" />
+                </MudHidden>
+
+                @_toolBarContent
+            </MudStack>
+        </MudPaper>
+
+        <MudContainer MaxWidth="MaxWidth.ExtraExtraLarge" Class="px-2">
+            <CascadingValue Value="this">
+                @Body
+            </CascadingValue>
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    bool drawerOpen = true;
+
+    RenderFragment? _toolBarContent = null;
+    public RenderFragment? ToolBarContent
+    {
+        set
+        {
+            _toolBarContent = value;
+            StateHasChanged();
+        }
+    }
+
+    public void ToggleDrawer()
+    {
+        drawerOpen = !drawerOpen;
+    }
+}

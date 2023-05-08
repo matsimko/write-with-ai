@@ -1,0 +1,19 @@
+﻿@implements IDisposable
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [CascadingParameter]
+    protected MainLayout MainLayout { get; set; } = null!;
+
+    protected override void OnInitialized()
+    {
+        MainLayout.ToolBarContent = ChildContent;
+    }
+
+    public void Dispose()
+    {
+        MainLayout.ToolBarContent = null;
+    }
+}

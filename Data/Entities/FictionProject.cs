@@ -3,4 +3,8 @@ public class FictionProject : WritingProject
 {
 	public List<WritingPart>? Characters { get; set; }
 	public WritingPart? World { get; set; }
+
+    public FictionProject() : base(ProjectTypes.Fiction)
+    {  
+    }
 }

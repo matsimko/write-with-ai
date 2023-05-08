@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Maui;
 using Data.Services;
 using Microsoft.Extensions.Logging;
+using MudBlazor.Services;
 using UI.Services;
 
 namespace UI;
@@ -19,8 +20,9 @@ public static class MauiProgram
 			});
 
 		builder.Services.AddMauiBlazorWebView();
+        builder.Services.AddMudServices();
 
-		builder.Services.AddSingleton<IDataService, FileDataService>();		
+        builder.Services.AddSingleton<IDataService, FileDataService>();		
 		builder.Services.AddSingleton(serviceProvider => serviceProvider.GetRequiredService<IDataService>().UserSettings);
 		builder.Services.AddSingleton<AiService>();
 		builder.Services.AddSingleton<WritingService>();

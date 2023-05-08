@@ -1,115 +1,147 @@
 ﻿@page "/projects"
+@inject IDialogService _dialogService
 @inject ProjectManager _projectManager
 @inject NavigationManager _navigationManager
 @inject PlatformUtils _platformUtils
 
-
-<ControlPanel>
-    <div>
-        <DialogTriggerButton Target="new-project" class="btn btn-primary"
-                >
-            <span class="bi bi-plus-lg"></span> New project
-        </DialogTriggerButton>
-    </div>
+<ToolBar>
+    <MudButton Variant="Variant.Filled"
+               StartIcon="@Icons.Material.Filled.Add"
+               Color="Color.Primary"
+               @onclick="CreateProject">
+        New project
+    </MudButton>
     @if(_platformUtils.CanChangeDirectory())
     {
-        <div>
-            <button type="button" class="btn btn-secondary"
-                    @onclick="PickWorkspace">
-                <span class="bi bi-folder2"></span> Change workspace
-            </button>
-        </div>
+        <MudButton Variant="Variant.Filled" 
+                StartIcon="@Icons.Material.Filled.FolderOpen"
+                @onclick="PickWorkspace">
+            Change workspace
+        </MudButton>
     }
-    <DialogTriggerButton Target="delete-projects" class="btn btn-secondary" @onclick=ResetProjectsToDelete>
-        <span class="bi bi-trash"></span> Delete projects
-    </DialogTriggerButton>
 
-</ControlPanel>
-
-<Accordion Items="GetProjectsByType()"
-            Context="projects"
-            class="accordion list-accordion">
-    <ItemTemplate>
-        <div class="list-group">
-            @foreach (var project in projects)
-            {
-            <button type="button" class="list-group-item list-group-item-action
-                    @(project == _projectManager.SelectedProject ? "active" : "")"
-                    @onclick="() => SelectProject(project)">
-                @project.Name
-            </button>
-            }
-        </div>
-    </ItemTemplate>
-</Accordion>
+</ToolBar>
 
 
-<CreateProjectDialog id="new-project" />
-<ConfirmDialog id="delete-projects" ConfirmText="Delete"
-               Title="Select projects to delete"
-               OnConfirm="DeleteProjects">
-    <select class="form-select" multiple @bind=_projectIdsToDelete size="10">
-        @foreach (var project in _projectManager.Projects)
+<MudDataGrid T="WritingProject" MultiSelection="true" Items="@_projectManager.Projects" Breakpoint="Breakpoint.None"
+             QuickFilter="@QuickFilter" Hover="true" Filterable="false"
+              RowClick="@RowClicked" @bind-SelectedItems="_selectedProjects">
+    <ToolBarContent>
+        <MudStack Row="true" AlignItems="AlignItems.End" Class="flex-grow-1">
+            <MudButton Variant="Variant.Outlined"
+                       StartIcon="@Icons.Material.Filled.Delete"
+                       @onclick="DeleteProjects">
+                Delete selected
+            </MudButton>
+            <MudSpacer />
+            <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" />
+        </MudStack>
+       
+    </ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.Name"/>
+        @if (!_platformUtils.IsMobile())
         {
-            <option value="@project.Id">@project.Name</option>
+            <PropertyColumn Property="x => x.Type" />
+            <PropertyColumn Property="x => x.CreationDate" Title="Creation date">
+                <CellTemplate>
+                    @context.Item.CreationDate.ToString("d")
+                </CellTemplate>
+            </PropertyColumn>
         }
-    </select>
-</ConfirmDialog>
+        <TemplateColumn Filterable="false" Sortable="false">
+            <CellTemplate>
+                <MudStack Row>
+                    <MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary"
+                               @onclick="() => OpenProject(context.Item)">
+                        Open project
+                    </MudButton>
+                </MudStack>
+            </CellTemplate>
+        </TemplateColumn>
+        <SelectColumn T="WritingProject" />
+    </Columns>
+    @*<PagerContent>
+        <MudDataGridPager T="WritingProject" />
+    </PagerContent>*@
+</MudDataGrid>
+
+
+
+
+
+
 
 
 @code {
-    private Guid[] _projectIdsToDelete = new Guid[] { };
+    private string? _searchString;
+    private HashSet<WritingProject> _selectedProjects = new();
 
-    private List<(string, List<WritingProject>)> GetProjectsByType()
+    private void CreateProject()
     {
-        var fictionProjects = new List<WritingProject>();
-        var nonfictionProjects = new List<WritingProject>();
-
-        @foreach (var project in _projectManager.Projects.OrderBy(p => p.Name))
-        {
-            if (project is FictionProject f)
-            {
-                fictionProjects.Add(f);
-            }
-            else if (project is NonfictionProject nf)
-            {
-                nonfictionProjects.Add(nf);
-            }
-        }
-
-        return new()
-        {
-            ("Fiction", fictionProjects),
-            ("Nonfiction", nonfictionProjects),
-        };
+        var options = new DialogOptions { CloseOnEscapeKey = true };
+        _dialogService.Show<CreateProjectDialog>("New project", options);
     }
 
     private async Task PickWorkspace()
     {
         var newWorkspace = await _platformUtils.PickFolder();
-        if(newWorkspace != null)
+        if (newWorkspace != null)
         {
             _projectManager.SetWorkspace(newWorkspace);
         }
     }
 
-    private void SelectProject(WritingProject project)
+    private bool QuickFilter(WritingProject p)
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+        {
+            return true;
+        }
+
+        if (p.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+
+    void RowClicked(DataGridRowClickEventArgs<WritingProject> args)
+    {
+        var doubleClick = args.MouseEventArgs.Detail == 2;
+        if (doubleClick)
+        {
+            OpenProject(args.Item);
+        }
+    }
+
+    private void OpenProject(WritingProject project)
     {
         _projectManager.SelectedProject = project;
         _navigationManager.NavigateTo("/current-project");
     }
 
-    private void DeleteProjects()
+    private async Task DeleteProjects()
     {
-        @foreach(var id in _projectIdsToDelete)
-        {
-            var project = _projectManager.Projects.Where(p => p.Id == id).First();
-            _projectManager.Projects.Remove(project);
-        }
-    }
+        var parameters = new DialogParameters();
+        parameters.Add("ContentText", "Do you really want to delete selected projects?");
+        parameters.Add("ConfirmText", "Delete");
+        parameters.Add("ConfirmColor", Color.Error);
 
-    private void ResetProjectsToDelete()
-    {
-        _projectIdsToDelete = new Guid[] { };
+        var options = new DialogOptions() { CloseButton = true};
+
+        var dialog = await _dialogService.ShowAsync<ConfirmDialog>("Delete selected", parameters, options);
+        var result = await dialog.Result;
+
+        if(!result.Canceled)
+        {
+            @foreach (var project in _selectedProjects)
+            {
+                _projectManager.Projects.Remove(project);
+            }
+        }
     }
 }

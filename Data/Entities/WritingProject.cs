@@ -8,10 +8,14 @@ public abstract class WritingProject
 {
 	public Guid Id { get; set; } = Guid.NewGuid();
 
+	public string Type { get; }
+
 	/// <summary>
 	/// Name of the project
 	/// </summary>
 	public required string Name { get; set; }
+
+	public DateTimeOffset CreationDate { get; set; } = DateTimeOffset.Now;
 
 	/// <summary>
 	/// Rules for writing are a part of every prompt
@@ -39,4 +43,10 @@ public abstract class WritingProject
     public string? Outline { get; set; }
 
     public List<WritingPart>? Parts { get; set; }
+
+
+    public WritingProject(string type)
+    {
+		Type = type;
+    }
 }

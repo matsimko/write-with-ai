@@ -57,6 +57,8 @@ public class FileDataService : IDataService
 				_logger.LogError(ex, "Failed to load project {path}", path);
 			}
 		}
+
+		projects.Sort((p1, p2) => p1.CreationDate.CompareTo(p2.CreationDate));
 		return projects;
 	}
 
@@ -76,7 +78,7 @@ public class FileDataService : IDataService
 
 	private string GetPathForProject(WritingProject project)
 	{
-		return Path.Combine(UserSettings.Workspace, $"{project.Title}_{project.Id}.json");
+		return Path.Combine(UserSettings.Workspace, $"{project.Name}_{project.Id}.json");
 	}
 
 	private static T? LoadFromJsonFile<T>(string path)

@@ -1,43 +1,47 @@
 ﻿@inject ProjectManager _projectManager
 @inject NavigationManager _navigationManager
 
-<ConfirmDialog ConfirmText="Create"
-               Title="New project"
-               FormId="create-project-form"
-               @attributes="DialogAttributes">
-    <EditForm id="create-project-form" Model=_projectData OnValidSubmit="CreateProject">
-        <ValidationSummary/>
-        <div>
-            <label for="project-name" class="form-label">Name</label>
-            <InputText @bind-Value=_projectData.Name class="form-control" id="project-name" />
-        </div>
-        <div class="mt-3">
-            <label for="project-type" class="form-label">Type</label>
-            <InputSelect @bind-Value=_projectData.Type class="form-select" id="project-type">
+<MudDialog>
+    <DialogContent>
+        <EditForm id="create-project-form" Model=_projectData OnValidSubmit="CreateProject">
+            <DataAnnotationsValidator />
+            <MudTextField Label="Name"
+                          @bind-Value=_projectData.Name For="@(() => _projectData.Name)" />
+            <MudSelect @bind-Value=_projectData.Type Label="Type" AnchorOrigin="Origin.BottomCenter">
                 @foreach (var type in ProjectTypes.All)
                 {
-                    <option>@type</option>
+                    <MudSelectItem Value="@type" />
                 }
-            </InputSelect>
-        </div>
-        
-    </EditForm>
-</ConfirmDialog>
+            </MudSelect>
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton form="create-project-form" ButtonType="ButtonType.Submit" Color="Color.Primary">Create</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    
+
+}
 
 @code {
     class ProjectData
     {
-        [MinLength(1)]
+        [Required]
         public string Name { get; set; } = "";
         public string Type { get; set; } = ProjectTypes.Fiction;
     }
 
     ProjectData _projectData = new();
 
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; } = null!;
+
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object>? DialogAttributes { get; set; }
 
-    public void CreateProject()
+    void CreateProject()
     {
         WritingProject? project = null;
         if (_projectData.Type == ProjectTypes.Fiction)
@@ -53,7 +57,11 @@
         {
             _projectManager.Projects.Add(project);
             _projectManager.SelectedProject = project;
+            MudDialog.Close(DialogResult.Ok(true));
             _navigationManager.NavigateTo("/current-project");
+
         }
     }
+
+    void Cancel() => MudDialog.Cancel();
 }
