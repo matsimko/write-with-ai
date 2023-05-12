@@ -3,6 +3,7 @@
 @inject ProjectManager _projectManager
 @inject NavigationManager _navigationManager
 @inject PlatformUtils _platformUtils
+@inject IDataService _dataService
 
 <ToolBar>
     <MudButton Variant="Variant.Filled"
@@ -11,15 +12,7 @@
                @onclick="CreateProject">
         New project
     </MudButton>
-    @if(_platformUtils.CanChangeDirectory())
-    {
-        <MudButton Variant="Variant.Filled" 
-                StartIcon="@Icons.Material.Filled.FolderOpen"
-                @onclick="PickWorkspace">
-            Change workspace
-        </MudButton>
-    }
-
+    <PickFolderButton OnFolderPicked="ChangeWorkspace"/>
 </ToolBar>
 
 
@@ -84,13 +77,13 @@
         _dialogService.Show<CreateProjectDialog>("New project", options);
     }
 
-    private async Task PickWorkspace()
+    private Task ChangeWorkspace(string newWorkspace)
     {
-        var newWorkspace = await _platformUtils.PickFolder();
-        if (newWorkspace != null)
+        UserSettings newSettings = new(_dataService.UserSettings)
         {
-            _projectManager.SetWorkspace(newWorkspace);
-        }
+            Workspace = newWorkspace
+        };
+        return _dataService.SaveUserSettingsAsync(newSettings);
     }
 
     private bool QuickFilter(WritingProject p)

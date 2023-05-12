@@ -1,0 +1,22 @@
+﻿<MudContainer MaxWidth="MaxWidth" Class="@_class">
+    @ChildContent
+</MudContainer>
+
+
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public MaxWidth MaxWidth { get; set; } = MudBlazor.MaxWidth.ExtraExtraLarge;
+
+    [Parameter]
+    public bool AlignLeft { get; set; } = true;
+
+    private string _class = "pa-0";
+
+    protected override void OnInitialized()
+    {
+        if (AlignLeft) _class += " ms-0";
+    }
+}

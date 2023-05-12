@@ -1,100 +1,123 @@
 ﻿using Data.Entities;
 using Microsoft.Extensions.Logging;
+using System.Data;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace Data.Services;
+
 public class FileDataService : IDataService
 {
-	private static readonly string _settingsFilePath = Path.Combine(new[] { "data", "settings.json" });
-	private readonly ILogger<FileDataService> _logger;
+    private static readonly string _settingsFilePath = Path.Combine(new[] { "data", "settings.json" });
+    private readonly ISecrets _secrets;
+    private readonly ILogger<FileDataService> _logger;
 
-	public UserSettings UserSettings { get; private set; }
+    public UserSettings UserSettings { get; private set; } = null!;
 
-	public FileDataService(ILogger<FileDataService> logger)
-	{
-		_logger = logger;
+    public event EventHandler? UserSettingsChanged;
 
-		LoadUserSettings();
-	}
+    public FileDataService(ISecrets secrets, ILogger<FileDataService> logger)
+    {
+        _secrets = secrets;
+        _logger = logger;
+    }
 
-	[MemberNotNull(nameof(UserSettings))]
-	private void LoadUserSettings()
-	{
-		try
-		{
-			UserSettings = LoadFromJsonFile<UserSettings>(_settingsFilePath) ?? new();
-		}
-		catch (Exception ex)
-		{
-			_logger.LogWarning(ex, "Failed to load UserSettings");
-			UserSettings = new();
-			SaveUserSettings();
-		}
-	}
+    public Task InitAsync()
+    {
+        return LoadUserSettingsAsync();
+    }
 
-	public void SaveUserSettings()
-	{
-		SaveAsJsonFile(UserSettings, _settingsFilePath);
-	}
+    [MemberNotNull(nameof(UserSettings))]
+    private async Task LoadUserSettingsAsync()
+    {
+        try
+        {
+            UserSettings = LoadFromJsonFile<UserSettings>(_settingsFilePath) ?? new();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to load UserSettings");
+            UserSettings = new();
+            await SaveUserSettingsAsync(initialSave: true);
+        }
 
-	public List<WritingProject> LoadProjects()
-	{
-		var projects = new List<WritingProject>();
-		foreach (var path in Directory.EnumerateFiles(UserSettings.Workspace, "*.json"))
-		{
-			try
-			{
-				var project = LoadFromJsonFile<WritingProject>(path);
-				if (project != null)
-				{
-					projects.Add(project);
-				}
-			}
-			catch (Exception ex)
-			{
-				_logger.LogError(ex, "Failed to load project {path}", path);
-			}
-		}
+        UserSettings.ApiKey = await _secrets.GetApiKeyAsync();
+    }
 
-		projects.Sort((p1, p2) => p1.CreationDate.CompareTo(p2.CreationDate));
-		return projects;
-	}
+    public Task SaveUserSettingsAsync(UserSettings userSettings)
+    {
+        UserSettings = userSettings;
+        return SaveUserSettingsAsync();
+    }
 
-	public void SaveProject(WritingProject project)
-	{
-		SaveAsJsonFile(project, GetPathForProject(project));
-	}
+    private async Task SaveUserSettingsAsync(bool initialSave = false)
+    {
+        SaveAsJsonFile(UserSettings, _settingsFilePath);
+        if (!initialSave)
+        {
+            await _secrets.SetApiKeyAsync(UserSettings.ApiKey);
+            UserSettingsChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
 
-	public void DeleteProject(WritingProject project)
-	{
-		var reg = new Regex($"{project.Id}.json$");
+    public List<WritingProject> LoadProjects()
+    {
+        var projects = new List<WritingProject>();
+        foreach (var path in Directory.EnumerateFiles(UserSettings.Workspace, "*.json"))
+        {
+            try
+            {
+                var project = LoadFromJsonFile<WritingProject>(path);
+                if (project != null)
+                {
+                    projects.Add(project);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to load project {path}", path);
+            }
+        }
 
-		Directory.EnumerateFiles(UserSettings.Workspace)
-				 .Where(path => reg.Match(path).Success).ToList()
-				 .ForEach(File.Delete);
-	}
+        projects.Sort((p1, p2) => p1.CreationDate.CompareTo(p2.CreationDate));
+        return projects;
+    }
 
-	private string GetPathForProject(WritingProject project)
-	{
-		return Path.Combine(UserSettings.Workspace, $"{project.Name}_{project.Id}.json");
-	}
+    public void SaveProject(WritingProject project)
+    {
+        SaveAsJsonFile(project, GetPathForProject(project));
+    }
 
-	private static T? LoadFromJsonFile<T>(string path)
-	{
-		var json = File.ReadAllText(path);
-		return JsonSerializer.Deserialize<T>(json);
-	}
+    public void DeleteProject(WritingProject project)
+    {
+        var reg = new Regex($"{project.Id}.json$");
 
-	private static void SaveAsJsonFile<T>(T obj, string path)
-	{
-		string json = JsonSerializer.Serialize(obj, new JsonSerializerOptions() { WriteIndented = true});
-		var fileInfo = new FileInfo(path);
-		if(fileInfo.Directory != null)
-		{
-			fileInfo.Directory.Create();
-			File.WriteAllText(path, json);
-		}
-	}
+        Directory.EnumerateFiles(UserSettings.Workspace)
+                 .Where(path => reg.Match(path).Success).ToList()
+                 .ForEach(File.Delete);
+    }
+
+    private string GetPathForProject(WritingProject project)
+    {
+        return Path.Combine(UserSettings.Workspace, $"{project.Name}_{project.Id}.json");
+    }
+
+    private static T? LoadFromJsonFile<T>(string path)
+    {
+        var json = File.ReadAllText(path);
+        return JsonSerializer.Deserialize<T>(json);
+    }
+
+    private static void SaveAsJsonFile<T>(T obj, string path)
+    {
+        string json = JsonSerializer.Serialize(obj, new JsonSerializerOptions() { WriteIndented = true });
+        var fileInfo = new FileInfo(path);
+        if (fileInfo.Directory != null)
+        {
+            fileInfo.Directory.Create();
+            File.WriteAllText(path, json);
+        }
+    }
 }

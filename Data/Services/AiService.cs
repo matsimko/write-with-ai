@@ -9,37 +9,31 @@ using System.Text;
 using System.Threading.Tasks;
 using OpenAI.GPT3;
 using System.Runtime.Serialization;
+using System.ComponentModel;
+using System.Text.RegularExpressions;
+using System.Reflection.Metadata.Ecma335;
 
 namespace Data.Services;
 public class AiService
 {
-	private readonly UserSettings _userSettings;
+    private readonly IDataService _dataService;
+	private UserSettings Settings { get => _dataService.UserSettings; }
 
-	public AiService(UserSettings userSettings)
+    public AiService(IDataService dataService)
 	{
-		_userSettings = userSettings;
-	}
+        _dataService = dataService;
+    }
 
 	public async Task<string> GenerateResponseAsync(string prompt, int? maxTokens = null, float temperature = 0.7f)
 	{
-
-		if(_userSettings.ApiKey == null)
-		{
-			throw new ApiKeyNotSetException();
-		}
-
-		var openAiService = new OpenAIService(new OpenAiOptions()
-		{
-			ApiKey = _userSettings.ApiKey
-		});
-
+		var openAiService = CreateOpenAiService();
 		var completionResult = await openAiService.ChatCompletion.CreateCompletion(new ChatCompletionCreateRequest
 		{
 			Messages = new List<ChatMessage>
 			{
 				ChatMessage.FromUser(prompt)
 			},
-			Model = _userSettings.SelectedModel ?? Models.ChatGpt3_5Turbo,
+			Model = Settings.SelectedModel ?? Models.ChatGpt3_5Turbo,
 			MaxTokens = maxTokens,
 			Temperature = temperature
 		});
@@ -53,6 +47,39 @@ public class AiService
 		return completionResult.Choices.First().Message.Content;
 		
 	}
+
+	public async Task<List<string>> GetAvailableModelsAsync()
+	{
+        var openAiService = CreateOpenAiService();
+		var response = await openAiService.ListModel();
+
+		var modelRegex = @"^gpt-(\d+)(\.\d+)?";
+
+		var availableModels = new List<string>();
+        foreach (var model in response.Models)
+		{
+			if(Regex.IsMatch(model.Id, modelRegex))
+			{
+				availableModels.Add(model.Id);
+			}
+		}
+		return availableModels;
+    }
+
+	private OpenAIService CreateOpenAiService()
+	{
+        if (Settings.ApiKey == null)
+        {
+            throw new ApiKeyNotSetException();
+        }
+
+        var openAiService = new OpenAIService(new OpenAiOptions()
+        {
+            ApiKey = Settings.ApiKey
+        });
+
+		return openAiService;
+    }
 }
 
 internal class AiServiceException : Exception

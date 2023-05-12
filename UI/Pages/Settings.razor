@@ -1,7 +1,65 @@
 ﻿@page "/settings"
+@inject IDataService _dataService
+@inject AiService _aiService
 
-<h3>Settings</h3>
+<ToolBar>
+    <MudButton Variant="Variant.Filled"
+               StartIcon="@Icons.Material.Filled.Save"
+               Color="Color.Primary"
+               @onclick="Save">
+        Save settings
+    </MudButton>
+</ToolBar>
+
+<ContentContainer MaxWidth="MaxWidth.Small">
+    <EditForm Model="_settings">
+        <MudStack Row=true AlignItems="AlignItems.End">
+            <PickFolderButton Text="Select folder" OnFolderPicked="ChangeWorkspace" />
+            <MudTextField @bind-Value="_settings.Workspace" Label="Workspace" />
+        </MudStack>
+        <Password @bind-Value="_settings.ApiKey" @onchange="UpdateAvailableModels" Label="Api key" />
+        <MudSelect @bind-Value="_settings.SelectedModel" Label="Selected model" AnchorOrigin="Origin.BottomCenter">
+            @foreach (var model in _models)
+            {
+            <MudSelectItem Value="@model" />
+            }
+        </MudSelect>
+    </EditForm>
+</ContentContainer>
+
+@*dark mode*@
+
+
 
 @code {
+    UserSettings _settings = null!;
+    List<string> _models = new();
 
+    protected override Task OnInitializedAsync()
+    {
+        _settings = new(_dataService.UserSettings);
+        return UpdateAvailableModels();
+    }
+
+    public async Task UpdateAvailableModels()
+    {
+        try
+        {
+            _models = await _aiService.GetAvailableModelsAsync();
+        }
+        catch
+        {
+            _models = new();
+        }
+    }
+
+    private void ChangeWorkspace(string newWorkspace)
+    {
+        _settings.Workspace = newWorkspace;
+    }
+
+    private Task Save()
+    {
+        return _dataService.SaveUserSettingsAsync(_settings);
+    }
 }

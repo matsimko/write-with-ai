@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
@@ -13,25 +14,26 @@ namespace UI.Services;
 internal class ProjectManager
 {
     private readonly IDataService _dataService;
+    private string _workspace;
     public ObservableCollection<WritingProject> Projects { get; private set; }
     public WritingProject? SelectedProject { get; set; }
 
     public ProjectManager(IDataService dataService)
     {
         _dataService = dataService;
+        _workspace = _dataService.UserSettings.Workspace;
+        _dataService.UserSettingsChanged += OnUserSettingsChanged;
         LoadProjects();
-        _dataService.UserSettings.OnWorkspaceChanged += UserSettings_OnWorkspaceChanged;
     }
 
-    public void SetWorkspace(string workspace)
+    private void OnUserSettingsChanged(object? sender, EventArgs e)
     {
-        _dataService.UserSettings.Workspace = workspace;
-        _dataService.SaveUserSettings();
-    }
-
-    private void UserSettings_OnWorkspaceChanged(object? sender, EventArgs e)
-    {
-        LoadProjects();
+        var newWorkspace = _dataService.UserSettings.Workspace;
+        if (_workspace != newWorkspace)
+        {
+            _workspace = newWorkspace;
+            LoadProjects();
+        }
     }
 
     [MemberNotNull(nameof(Projects))]

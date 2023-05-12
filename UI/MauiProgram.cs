@@ -23,19 +23,21 @@ public static class MauiProgram
         builder.Services.AddMudServices();
 
         builder.Services.AddSingleton<IDataService, FileDataService>();		
-		builder.Services.AddSingleton(serviceProvider => serviceProvider.GetRequiredService<IDataService>().UserSettings);
 		builder.Services.AddSingleton<AiService>();
 		builder.Services.AddSingleton<WritingService>();
         builder.Services.AddSingleton<ProjectManager>();
 		builder.Services.AddSingleton<PlatformUtils>();
-
+		builder.Services.AddSingleton<ISecrets, Secrets>();
 #if DEBUG
         builder.Services.AddBlazorWebViewDeveloperTools();
 		builder.Logging.AddDebug();
 #endif
-
 		Directory.SetCurrentDirectory(FileSystem.Current.AppDataDirectory);
 
-		return builder.Build();
+		var app = builder.Build();
+
+		app.Services.GetRequiredService<IDataService>().InitAsync().Wait();
+
+		return app;
 	}
 }
